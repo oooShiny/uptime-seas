@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚓ Uptime Seas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── CSS Variables ─────────────────────────────────────────── */
+    :root {
+      --sky:            #0a1628;
+      --sky-mid:        #1a3a6b;
+      --sky-horizon:    #2d6a9f;
+      --water-surface:  #1e6ba8;
+      --water-deep:     #0a3d6b;
+      --water-abyss:    #051525;
+      --ocean-floor:    #04090f;
+      --sediment:       #1a1008;
+      --foam:           rgba(255,255,255,0.15);
+      --gold:           #f4c842;
+      --rope:           #c4a35a;
+      --coral:          #ff6b5b;
+      --seafoam:        #4dd9ac;
+      --mist:           rgba(255,255,255,0.06);
+      --font-display:   'Playfair Display', serif;
+      --font-ui:        'Nunito', sans-serif;
+      --font-mono:      'JetBrains Mono', monospace;
+    }
+
+    /* ─── Reset & Base ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-ui);
+      background: var(--sky);
+      color: #e8f4ff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── Stars ─────────────────────────────────────────────────── */
+    .stars {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 40vh;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .star {
+      position: absolute;
+      background: #fff;
+      border-radius: 50%;
+      animation: twinkle var(--dur, 3s) ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: var(--max-op, 0.8); transform: scale(1); }
+      50%       { opacity: 0.1; transform: scale(0.5); }
+    }
+
+    /* ─── Header ────────────────────────────────────────────────── */
+    header {
+      position: relative;
+      z-index: 10;
+      padding: 3rem 2rem 2rem;
+      text-align: center;
+      background: linear-gradient(180deg, var(--sky) 0%, transparent 100%);
+    }
+
+    .compass-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .compass-svg {
+      width: 56px; height: 56px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 0 12px rgba(244,200,66,0.6));
+      animation: compassSpin 20s linear infinite;
+    }
+    @keyframes compassSpin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .title-block { text-align: center; }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 0 30px rgba(244,200,66,0.4), 0 2px 4px rgba(0,0,0,0.6);
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: clamp(0.95rem, 2vw, 1.2rem);
+      color: rgba(200,220,255,0.75);
+      margin-top: 0.4rem;
+    }
+
+    .rope-divider {
+      width: 100%;
+      max-width: 700px;
+      margin: 1.2rem auto 1rem;
+      height: 12px;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--rope) 0px,
+        var(--rope) 8px,
+        #8a6f3a 8px,
+        #8a6f3a 12px,
+        var(--rope) 12px,
+        var(--rope) 18px,
+        #6b5020 18px,
+        #6b5020 22px
+      );
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      opacity: 0.8;
+    }
+
+    .meta-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      font-size: 0.82rem;
+      color: rgba(180,210,255,0.65);
+      font-weight: 600;
+    }
+
+    .meta-dot { color: var(--gold); }
+
+    #last-updated {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      color: rgba(180,210,255,0.5);
+    }
+
+    /* ─── Loading & Error States ────────────────────────────────── */
+    #state-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 50vh;
+      gap: 1.5rem;
+      padding: 4rem 2rem;
+    }
+
+    .anchor-spinner {
+      font-size: 4rem;
+      animation: anchorBob 1.2s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px rgba(244,200,66,0.5));
+    }
+    @keyframes anchorBob {
+      0%, 100% { transform: translateY(0) rotate(-5deg); }
+      50%       { transform: translateY(-12px) rotate(5deg); }
+    }
+
+    .state-text {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      color: rgba(200,220,255,0.8);
+      text-align: center;
+    }
+
+    .retry-btn {
+      background: var(--gold);
+      color: #0a1628;
+      border: none;
+      padding: 0.7rem 2rem;
+      border-radius: 999px;
+      font-family: var(--font-ui);
+      font-weight: 800;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 16px rgba(244,200,66,0.3);
+    }
+    .retry-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(244,200,66,0.5);
+    }
+
+    /* ─── Scene Container ───────────────────────────────────────── */
+    #scene {
+      position: relative;
+      width: 100%;
+    }
+
+    /* ─── Zone Sections ─────────────────────────────────────────── */
+    .zone-section {
+      position: relative;
+      width: 100%;
+      padding: 2rem 2rem 1rem;
+    }
+
+    .zone-sky        { background: linear-gradient(180deg, var(--sky) 0%, var(--sky-mid) 100%); }
+    .zone-surface    { background: linear-gradient(180deg, var(--sky-horizon) 0%, var(--water-surface) 100%); }
+    .zone-shallow    { background: linear-gradient(180deg, var(--water-surface) 0%, #1556a0 100%); }
+    .zone-deep       { background: linear-gradient(180deg, #1556a0 0%, var(--water-deep) 100%); }
+    .zone-abyss      { background: linear-gradient(180deg, var(--water-deep) 0%, var(--water-abyss) 100%); }
+    .zone-floor      {
+      background: linear-gradient(180deg,
+        var(--water-abyss) 0%,
+        #030c14 30%,
+        #06090a 65%,
+        var(--sediment) 100%
+      );
+      position: relative;
+      padding-top: 24em;
+    }
+    .zone-floor::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 18px,
+        rgba(80,50,20,0.04) 18px,
+        rgba(80,50,20,0.04) 20px
+      );
+      pointer-events: none;
+    }
+    .zone-unknown    { background: linear-gradient(180deg, #1a2a3f 0%, #0f1e30 100%); }
+
+    /* ─── Wave Divider ──────────────────────────────────────────── */
+    .wave-divider {
+      position: relative;
+      width: 100%;
+      height: 80px;
+      overflow: hidden;
+      margin: 0;
+      flex-shrink: 0;
+    }
+    .wave-divider svg {
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 200%;
+      height: 100%;
+      animation: waveDrift 8s linear infinite;
+    }
+    .wave-divider svg:nth-child(2) {
+      animation-delay: -4s;
+      opacity: 0.5;
+    }
+    @keyframes waveDrift {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    .wave-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(10,22,40,0.85);
+      border: 1px solid rgba(244,200,66,0.4);
+      color: var(--gold);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.25rem 0.85rem;
+      border-radius: 999px;
+      white-space: nowrap;
+      z-index: 5;
+      box-shadow: 0 0 16px rgba(244,200,66,0.2);
+      letter-spacing: 0.05em;
+    }
+
+    /* ─── Zone Labels ───────────────────────────────────────────── */
+    .zone-label {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .zone-label-text {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(180,220,255,0.45);
+      background: var(--mist);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 0.3rem 0.8rem;
+      border-radius: 4px;
+    }
+
+    .zone-line {
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.07);
+    }
+
+    /* ─── Company Grid ──────────────────────────────────────────── */
+    .company-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 1.4rem 1.1rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ─── Company Card (Boat) ───────────────────────────────────── */
+    .card {
+      position: relative;
+      border-radius: 6px 6px 50% 50% / 6px 6px 35% 35%;
+      padding: 1rem 1.2rem 1.4rem;
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-bottom: 5px solid rgba(0,0,0,0.25);
+      overflow: visible;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transform: rotate(var(--tilt, 0deg));
+      margin-top: 38px; /* room for mast/sail */
+    }
+
+    /* Mast */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: -34px;
+      left: 38%;
+      width: 3px;
+      height: 48px;
+      background: linear-gradient(to bottom, #8a6f3a, var(--rope));
+      border-radius: 2px 2px 0 0;
+      z-index: 1;
+      transition: background 0.2s;
+    }
+
+    /* Sail — attached to mast, triangular */
+    .card::after {
+      content: '';
+      position: absolute;
+      top: -30px;
+      left: 38%;
+      width: 40px;
+      height: 36px;
+      background: rgba(255,255,255,0.12);
+      border-left: 3px solid var(--rope);
+      clip-path: polygon(0 0, 100% 40%, 0 100%);
+      z-index: 0;
+      transition: background 0.2s;
+    }
+
+    .card:hover {
+      animation: cardBob 2s ease-in-out infinite;
+      transform: rotate(var(--tilt, 0deg)) translateY(-6px);
+      z-index: 10;
+    }
+
+    .card:hover::after {
+      background: rgba(255,255,255,0.22);
+    }
+
+    @keyframes cardBob {
+      0%, 100% { transform: rotate(calc(var(--tilt, 0deg) - 2deg)) translateY(-6px); }
+      50%       { transform: rotate(calc(var(--tilt, 0deg) + 2deg)) translateY(-14px); }
+    }
+
+    /* Sky zone cards */
+    .card-sky {
+      background: linear-gradient(145deg, rgba(26,58,107,0.9) 0%, rgba(20,45,85,0.8) 100%);
+      box-shadow: 0 4px 24px rgba(77,217,172,0.15), 0 0 0 1px rgba(77,217,172,0.2);
+    }
+    .card-sky:hover {
+      box-shadow: 0 8px 40px rgba(77,217,172,0.25), 0 0 0 1px rgba(77,217,172,0.4);
+    }
+
+    /* Surface zone cards */
+    .card-surface {
+      background: linear-gradient(145deg, rgba(30,107,168,0.85) 0%, rgba(20,80,130,0.8) 100%);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    /* Shallow zone cards */
+    .card-shallow {
+      background: linear-gradient(145deg, rgba(21,86,160,0.8) 0%, rgba(10,61,107,0.85) 100%);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      filter: brightness(0.9);
+    }
+
+    /* Deep zone cards */
+    .card-deep {
+      background: linear-gradient(145deg, rgba(10,61,107,0.85) 0%, rgba(5,30,60,0.9) 100%);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      filter: brightness(0.78) blur(0.3px);
+    }
+
+    /* Abyss zone cards */
+    .card-abyss {
+      background: linear-gradient(145deg, rgba(5,21,37,0.9) 0%, rgba(3,10,20,0.95) 100%);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+      filter: brightness(0.65) blur(0.5px);
+    }
+
+    /* Ocean Floor zone cards — buried, desaturated, heavy */
+    .card-floor {
+      background: linear-gradient(145deg, rgba(8,12,10,0.97) 0%, rgba(20,13,5,0.98) 100%);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.9), inset 0 1px 0 rgba(80,50,20,0.15);
+      filter: grayscale(0.6) sepia(0.3) brightness(0.55) blur(0.6px);
+      border-color: rgba(60,40,15,0.3);
+      transform: rotate(18deg) translateY(10px) !important;
+    }
+    .card-floor::before {
+      transform: rotate(-35deg) translateY(10px);
+      background: rgba(100,70,40,0.5);
+    }
+    .card-floor::after {
+      clip-path: polygon(0 0, 60% 50%, 0 80%);
+      background: rgba(80,50,20,0.15);
+      opacity: 0.5;
+    }
+    .card-floor:hover {
+      box-shadow: 0 12px 48px rgba(0,0,0,0.95), 0 0 20px rgba(80,50,20,0.2), inset 0 1px 0 rgba(80,50,20,0.2);
+      filter: grayscale(0.4) sepia(0.25) brightness(0.65);
+      animation: none;
+    }
+
+    /* Unknown / ghost */
+    .card-unknown {
+      background: rgba(20,35,55,0.5);
+      box-shadow: none;
+      filter: grayscale(0.7) brightness(0.6);
+      border: 1px dashed rgba(255,255,255,0.15);
+    }
+
+    /* Incident pulse */
+    .card-incident {
+      box-shadow: 0 0 20px rgba(255,107,91,0.4), 0 0 0 1px rgba(255,107,91,0.4) !important;
+      animation: incidentPulse 2s ease-in-out infinite !important;
+    }
+    .card-incident::before {
+      background: linear-gradient(to bottom, var(--coral), rgba(255,107,91,0.2));
+    }
+    .card-incident:hover {
+      animation: incidentPulseBob 2s ease-in-out infinite !important;
+    }
+    @keyframes incidentPulse {
+      0%, 100% { 
+        box-shadow: 0 0 20px rgba(255,107,91,0.3), 0 0 0 1px rgba(255,107,91,0.3); 
+        transform: rotate(var(--tilt, 0deg));
+      }
+      50% { 
+        box-shadow: 0 0 40px rgba(255,107,91,0.6), 0 0 0 2px rgba(255,107,91,0.6); 
+        transform: rotate(var(--tilt, 0deg));
+      }
+    }
+    @keyframes incidentPulseBob {
+      0%, 100% { 
+        box-shadow: 0 0 20px rgba(255,107,91,0.3), 0 0 0 1px rgba(255,107,91,0.3); 
+        transform: rotate(calc(var(--tilt, 0deg) - 2deg)) translateY(-6px);
+      }
+      50% { 
+        box-shadow: 0 0 40px rgba(255,107,91,0.6), 0 0 0 2px rgba(255,107,91,0.6); 
+        transform: rotate(calc(var(--tilt, 0deg) + 2deg)) translateY(-14px);
+      }
+    }
+
+    /* Card content */
+    .card-emoji {
+      font-size: 2.2rem;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+      display: block;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+
+    .card-name {
+      font-family: var(--font-ui);
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: #e8f4ff;
+      margin-bottom: 0.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+
+    .card-uptime {
+      font-family: var(--font-mono);
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.45rem;
+    }
+    .uptime-high   { color: var(--seafoam); }
+    .uptime-mid    { color: #a8d8f0; }
+    .uptime-low    { color: var(--coral); }
+    .uptime-none   { color: rgba(180,200,220,0.45); }
+
+    .card-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+      text-transform: capitalize;
+    }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-operational { background: var(--seafoam); box-shadow: 0 0 6px var(--seafoam); }
+    .dot-degraded    { background: #f4c842; box-shadow: 0 0 6px #f4c842; }
+    .dot-partial     { background: #f4984e; box-shadow: 0 0 6px #f4984e; }
+    .dot-major       { background: var(--coral); box-shadow: 0 0 6px var(--coral); }
+    .dot-unknown     { background: rgba(180,200,220,0.3); }
+
+    .card-incidents {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: rgba(180,210,255,0.55);
+    }
+    .card-incidents.has-incidents {
+      color: var(--coral);
+      font-weight: 800;
+    }
+
+    /* Underwater bubble particles */
+    .bubbles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      border-radius: inherit;
+    }
+    .bubble {
+      position: absolute;
+      bottom: -10px;
+      width: var(--sz, 6px);
+      height: var(--sz, 6px);
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      animation: bubbleRise var(--dur, 3s) ease-in var(--delay, 0s) infinite;
+      left: var(--x, 50%);
+    }
+    @keyframes bubbleRise {
+      0%   { transform: translateY(0) scale(1); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.6; }
+      100% { transform: translateY(-120px) scale(1.4); opacity: 0; }
+    }
+
+    /* ─── Animated Fish ─────────────────────────────────────────── */
+    .fish-container {
+      position: relative;
+      height: 0;
+      overflow: visible;
+      pointer-events: none;
+    }
+    .fish {
+      position: absolute;
+      font-size: 1.4rem;
+      top: -20px;
+      animation: fishSwim 22s linear infinite;
+      filter: drop-shadow(0 0 6px rgba(77,217,172,0.4));
+    }
+    .fish:nth-child(2) {
+      top: 10px;
+      font-size: 1rem;
+      animation-duration: 30s;
+      animation-delay: -12s;
+    }
+    @keyframes fishSwim {
+      0%   { left: -60px;  transform: scaleX(1)  translateY(0px); }
+      20%  { transform: scaleX(1)  translateY(-8px); }
+      40%  { transform: scaleX(1)  translateY(5px); }
+      49%  { left: calc(100% + 60px); transform: scaleX(1)  translateY(0); }
+      50%  { left: calc(100% + 60px); transform: scaleX(-1) translateY(0); }
+      70%  { transform: scaleX(-1) translateY(-8px); }
+      90%  { transform: scaleX(-1) translateY(5px); }
+      100% { left: -60px;  transform: scaleX(-1) translateY(0); }
+    }
+
+    /* ─── Fog zone separator ────────────────────────────────────── */
+    .fog-separator {
+      position: relative;
+      height: 60px;
+      background: linear-gradient(180deg, transparent 0%, rgba(20,35,55,0.6) 50%, transparent 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .fog-text {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(180,210,255,0.3);
+      background: rgba(10,22,40,0.7);
+      padding: 0.3rem 1rem;
+      border-radius: 999px;
+      border: 1px dashed rgba(180,210,255,0.15);
+      z-index: 2;
+    }
+    .fog-wisp {
+      position: absolute;
+      width: 200px;
+      height: 40px;
+      background: radial-gradient(ellipse at center, rgba(255,255,255,0.04) 0%, transparent 70%);
+      animation: fogDrift var(--dur, 10s) ease-in-out infinite alternate;
+      top: 10px;
+      left: var(--x, 10%);
+    }
+    @keyframes fogDrift {
+      from { transform: translateX(0) scaleX(1); opacity: 0.5; }
+      to   { transform: translateX(40px) scaleX(1.2); opacity: 1; }
+    }
+
+    /* ─── Stats Bar ─────────────────────────────────────────────── */
+    #stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+      padding: 1.5rem 2rem 0.5rem;
+      font-size: 0.8rem;
+      color: rgba(180,210,255,0.5);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .stat-item strong {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      color: rgba(200,230,255,0.85);
+      margin-left: 0.3rem;
+    }
+
+    /* ─── Data Sources ──────────────────────────────────────────── */
+    .data-sources {
+      max-width: 860px;
+      margin: 0 auto 2rem;
+      padding: 0 1.5rem;
+    }
+
+    .data-sources summary {
+      cursor: pointer;
+      font-family: var(--font-ui);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      padding: 0.75rem 0;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      transition: color 0.2s;
+    }
+    .data-sources summary::-webkit-details-marker { display: none; }
+    .data-sources summary::after {
+      content: '▸';
+      margin-left: auto;
+      transition: transform 0.2s;
+    }
+    details[open] .data-sources summary::after,
+    .data-sources details[open] summary::after { transform: rotate(90deg); }
+    .data-sources[open] summary { color: rgba(255,255,255,0.6); }
+
+    .data-sources .ds-intro {
+      font-size: 0.82rem;
+      color: rgba(200,220,255,0.6);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .data-sources table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      margin-bottom: 1rem;
+    }
+    .data-sources th {
+      text-align: left;
+      font-family: var(--font-ui);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-size: 0.68rem;
+      color: var(--gold);
+      padding: 0.4rem 0.75rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .data-sources td {
+      padding: 0.4rem 0.75rem;
+      color: rgba(200,220,255,0.65);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-family: var(--font-ui);
+    }
+    .data-sources td code {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: rgba(180,210,255,0.8);
+      background: rgba(255,255,255,0.05);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    .data-sources tr:hover td { background: rgba(255,255,255,0.03); }
+
+    .data-sources .ds-note {
+      font-size: 0.78rem;
+      color: rgba(200,220,255,0.5);
+      line-height: 1.6;
+      margin-top: 0.75rem;
+    }
+    .data-sources .ds-note strong { color: rgba(200,220,255,0.75); }
+
+    /* ─── Ocean Floor zone label override ──────────────────────── */
+    .zone-floor .zone-label-text {
+      color: rgba(140,100,60,0.6);
+      border-color: rgba(80,50,20,0.25);
+      background: rgba(20,12,4,0.7);
+      letter-spacing: 0.15em;
+    }
+    .zone-floor .zone-line {
+      background: rgba(80,50,20,0.2);
+    }
+
+    /* ─── Ocean Floor wreckage header ───────────────────────────── */
+    .floor-header {
+      text-align: center;
+      padding: 1.8rem 1rem 2rem;
+      position: relative;
+    }
+    .floor-header-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 900;
+      font-style: italic;
+      color: rgba(120,85,45,0.75);
+      text-shadow: 0 0 30px rgba(60,30,10,0.8), 0 2px 6px rgba(0,0,0,0.9);
+      letter-spacing: 0.04em;
+      margin-bottom: 0.35rem;
+    }
+    .floor-header-sub {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(90,60,30,0.55);
+    }
+    .floor-scatter {
+      display: flex;
+      justify-content: center;
+      gap: clamp(0.6rem, 2vw, 1.4rem);
+      margin-top: 0.9rem;
+      font-size: 1.3rem;
+      filter: grayscale(0.7) brightness(0.6);
+      opacity: 0.7;
+    }
+    .floor-scatter span {
+      display: inline-block;
+      animation: floorSway var(--sway-dur, 8s) ease-in-out infinite;
+      animation-delay: var(--sway-delay, 0s);
+    }
+    @keyframes floorSway {
+      0%, 100% { transform: rotate(var(--sway-base, -3deg)) translateY(0); }
+      50%       { transform: rotate(var(--sway-peak, 3deg)) translateY(-3px); }
+    }
+    .sediment-line {
+      width: 100%;
+      max-width: 600px;
+      margin: 1.2rem auto 0;
+      height: 3px;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent 4px,
+        rgba(80,50,20,0.35) 4px,
+        rgba(80,50,20,0.35) 6px,
+        transparent 6px,
+        transparent 14px,
+        rgba(60,35,12,0.2) 14px,
+        rgba(60,35,12,0.2) 16px
+      );
+      border-radius: 2px;
+    }
+
+    /* ─── Sediment particles (drifting sideways, very slow) ─────── */
+    .sediment-particles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .sediment-particle {
+      position: absolute;
+      width: var(--ps, 3px);
+      height: var(--ps, 3px);
+      border-radius: 50%;
+      background: rgba(180,140,80,0.18);
+      top: var(--py, 50%);
+      animation: sedimentDrift var(--pd, 18s) linear var(--pdelay, 0s) infinite;
+    }
+    @keyframes sedimentDrift {
+      0%   { left: 105%; opacity: 0; transform: translateY(0); }
+      5%   { opacity: 1; }
+      90%  { opacity: 0.6; }
+      100% { left: -5%;  opacity: 0; transform: translateY(var(--pdrift, 20px)); }
+    }
+
+    /* ─── Footer ────────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 3rem 2rem 4rem;
+      font-size: 0.75rem;
+      color: rgba(180,150,110,0.55);
+      background: linear-gradient(to bottom, #1a0f08, #0d0704);
+    }
+
+    /* ─── Responsive tweaks ─────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .company-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem 0.8rem; }
+      .card { margin-top: 32px; }
+      .card::before { height: 40px; top: -28px; }
+      .card::after { top: -24px; width: 32px; height: 30px; }
+      h1 { font-size: 2rem; }
+      .compass-wrap { gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Stars background -->
+  <div class="stars" id="stars"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="compass-wrap">
+      <svg class="compass-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- Outer ring -->
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#c4a35a" stroke-width="2.5"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(196,163,90,0.3)" stroke-width="1"/>
+        <!-- Cardinal tick marks -->
+        <line x1="50" y1="6" x2="50" y2="16" stroke="#f4c842" stroke-width="2"/>
+        <line x1="50" y1="84" x2="50" y2="94" stroke="#c4a35a" stroke-width="1.5"/>
+        <line x1="6" y1="50" x2="16" y2="50" stroke="#c4a35a" stroke-width="1.5"/>
+        <line x1="84" y1="50" x2="94" y2="50" stroke="#c4a35a" stroke-width="1.5"/>
+        <!-- Cardinal letters -->
+        <text x="50" y="29" text-anchor="middle" font-size="10" fill="#f4c842" font-weight="bold" font-family="serif">N</text>
+        <text x="50" y="78" text-anchor="middle" font-size="8" fill="#c4a35a" font-family="serif">S</text>
+        <text x="73" y="54" text-anchor="middle" font-size="8" fill="#c4a35a" font-family="serif">E</text>
+        <text x="27" y="54" text-anchor="middle" font-size="8" fill="#c4a35a" font-family="serif">W</text>
+        <!-- Needle - North (gold) -->
+        <polygon points="50,20 53.5,50 50,44 46.5,50" fill="#f4c842"/>
+        <!-- Needle - South (dark) -->
+        <polygon points="50,80 53.5,50 50,56 46.5,50" fill="#4a3510"/>
+        <!-- Center dot -->
+        <circle cx="50" cy="50" r="4" fill="#f4c842"/>
+        <circle cx="50" cy="50" r="2" fill="#0a1628"/>
+      </svg>
+
+      <div class="title-block">
+        <h1>⚓ The Uptime Seas</h1>
+        <p class="subtitle">A 90-day voyage across tech reliability</p>
+      </div>
+
+      <svg class="compass-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="animation-direction:reverse;">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#c4a35a" stroke-width="2.5"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(196,163,90,0.3)" stroke-width="1"/>
+        <line x1="50" y1="6" x2="50" y2="16" stroke="#f4c842" stroke-width="2"/>
+        <line x1="50" y1="84" x2="50" y2="94" stroke="#c4a35a" stroke-width="1.5"/>
+        <line x1="6" y1="50" x2="16" y2="50" stroke="#c4a35a" stroke-width="1.5"/>
+        <line x1="84" y1="50" x2="94" y2="50" stroke="#c4a35a" stroke-width="1.5"/>
+        <text x="50" y="29" text-anchor="middle" font-size="10" fill="#f4c842" font-weight="bold" font-family="serif">N</text>
+        <text x="50" y="78" text-anchor="middle" font-size="8" fill="#c4a35a" font-family="serif">S</text>
+        <text x="73" y="54" text-anchor="middle" font-size="8" fill="#c4a35a" font-family="serif">E</text>
+        <text x="27" y="54" text-anchor="middle" font-size="8" fill="#c4a35a" font-family="serif">W</text>
+        <polygon points="50,20 53.5,50 50,44 46.5,50" fill="#f4c842"/>
+        <polygon points="50,80 53.5,50 50,56 46.5,50" fill="#4a3510"/>
+        <circle cx="50" cy="50" r="4" fill="#f4c842"/>
+        <circle cx="50" cy="50" r="2" fill="#0a1628"/>
+      </svg>
+    </div>
+
+    <div class="rope-divider"></div>
+
+    <div class="meta-bar">
+      <span>90-Day Uptime Monitor</span>
+      <span class="meta-dot">⚓</span>
+      <span id="company-count">Loading…</span>
+      <span class="meta-dot">◆</span>
+      <span id="last-updated">—</span>
+    </div>
+  </header>
+
+  <!-- Stats bar -->
+  <div id="stats-bar"></div>
+
+  <!-- Loading / Error state -->
+  <div id="state-container">
+    <div class="anchor-spinner">⚓</div>
+    <p class="state-text">Charting the waters…</p>
+  </div>
+
+  <!-- Main scene (hidden until data loads) -->
+  <div id="scene" style="display:none;"></div>
+
+
+
+  <footer>
+    <details class="data-sources">
+      <summary>📡 Data Sources &amp; Methodology</summary>
+      <p class="ds-intro">Each company is fetched individually from their own public status API directly in your browser — there is no server or aggregator. 28 HTTP requests are made in parallel every 60 seconds (2 per company: one for current status, one for incident history).</p>
+      <table>
+        <thead>
+        <tr>
+          <th>Company</th>
+          <th>Platform</th>
+          <th>Endpoints fetched</th>
+          <th>Notes</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr><td>OpenAI</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        <tr><td>Anthropic</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        <tr><td>GitHub</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        <tr><td>Vercel</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        <tr><td>Discord</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        <tr><td>Cloudflare</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        <tr><td>Zoom</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        <tr><td>Atlassian</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        <tr><td>Stability AI</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        <tr><td>ElevenLabs</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        <tr><td>Groq</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        <tr><td>Cohere</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        <tr><td>DeepSeek</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        <tr><td>HeyGen</td><td>Statuspage.io</td><td><code>/api/v2/summary.json</code>, <code>/api/v2/incidents.json</code></td><td></td></tr>
+        </tbody>
+      </table>
+      <p class="ds-note"><strong>Uptime %</strong> is calculated from the last 50 incidents returned by each API over the past 90 days. For each incident (excluding <code>impact: none</code>), the actual resolved duration is subtracted from the 90-day window. Ongoing incidents count as down until now. The API caps at 50 incidents per request — companies with very high incident frequency may show slightly inflated uptime figures.</p>
+      <p class="ds-note">Most companies in this list use <strong>Statuspage.io</strong> (owned by Atlassian), which provides a standard REST API at a consistent URL pattern — this is why all endpoints look identical.</p>
+    </details>
+    ⚓ The Uptime Seas — data sourced from public status pages &nbsp;·&nbsp; refreshes every 60 seconds &nbsp;·&nbsp; hosted on GitHub Pages
+  </footer>
+
+  <script>
+    /* ─── Config ──────────────────────────────────────────────────── */
+    const REFRESH_INTERVAL = 60_000;
+    const FETCH_TIMEOUT_MS = 10_000;
+    const PROXY_URL = 'https://uptime-seas-proxy.browa2.workers.dev';
+
+    const STATUSPAGE_COMPANIES = [
+      { id: 'openai',      name: 'OpenAI',        url: 'https://status.openai.com',          emoji: '\u{1F916}', category: 'ai' },
+      { id: 'anthropic',   name: 'Anthropic',     url: 'https://status.anthropic.com',       emoji: '\u{1F9E0}', category: 'ai' },
+      { id: 'github',      name: 'GitHub',        url: 'https://www.githubstatus.com',       emoji: '\u{1F419}', category: 'dev' },
+      { id: 'vercel',      name: 'Vercel',        url: 'https://www.vercel-status.com',      emoji: '\u25B2',  category: 'dev' },
+      { id: 'discord',     name: 'Discord',       url: 'https://discordstatus.com',          emoji: '\u{1F4AC}', category: 'social' },
+      { id: 'cloudflare',  name: 'Cloudflare',    url: 'https://www.cloudflarestatus.com',   emoji: '\u{1F536}', category: 'infra' },
+      { id: 'zoom',        name: 'Zoom',          url: 'https://status.zoom.us',             emoji: '\u{1F4F9}', category: 'social' },
+      { id: 'atlassian',   name: 'Atlassian',     url: 'https://status.atlassian.com',       emoji: '\u{1F537}', category: 'dev' },
+      { id: 'stability',   name: 'Stability AI',  url: 'https://status.stability.ai',        emoji: '\u{1F3A8}', category: 'ai' },
+      { id: 'elevenlabs',  name: 'ElevenLabs',    url: 'https://status.elevenlabs.io',       emoji: '\u{1F399}\uFE0F', category: 'ai' },
+      { id: 'groq',        name: 'Groq',          url: 'https://groqstatus.com',             emoji: '\u26A1', category: 'ai' },
+      { id: 'cohere',      name: 'Cohere',        url: 'https://status.cohere.com',          emoji: '\u{1F52E}', category: 'ai' },
+      { id: 'deepseek',    name: 'DeepSeek',      url: 'https://status.deepseek.com',        emoji: '\u{1F40B}', category: 'ai' },
+      { id: 'heygen',      name: 'HeyGen',        url: 'https://status.heygen.com',          emoji: '\u{1F3AC}', category: 'ai' },
+    ];
+
+    /* ─── Data fetching helpers ──────────────────────────────────── */
+    function fetchWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
+      const proxiedUrl = PROXY_URL
+        ? `${PROXY_URL}/?url=${encodeURIComponent(url)}`
+        : url;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      return fetch(proxiedUrl, { signal: controller.signal }).finally(() => clearTimeout(timer));
+    }
+
+    function computeUptimeFromIncidents(incidents, windowDays = 90) {
+      const now = Date.now();
+      const windowMs = windowDays * 24 * 60 * 60 * 1000;
+      const windowStart = now - windowMs;
+      let totalDownMs = 0;
+      for (const incident of incidents) {
+        if (incident.impact === 'none') continue;
+        const start = new Date(incident.created_at).getTime();
+        const end = incident.resolved_at
+          ? new Date(incident.resolved_at).getTime()
+          : now;
+        const clampedStart = Math.max(start, windowStart);
+        const clampedEnd = Math.min(end, now);
+        if (clampedEnd <= clampedStart) continue;
+        totalDownMs += clampedEnd - clampedStart;
+      }
+      const uptime = Math.max(0, (1 - totalDownMs / windowMs) * 100);
+      return Math.min(100, uptime);
+    }
+
+    function normalizeStatuspageStatus(indicator) {
+      const map = {
+        none:        'operational',
+        minor:       'degraded',
+        major:       'partial_outage',
+        critical:    'major_outage',
+        maintenance: 'degraded',
+      };
+      return map[indicator] || 'unknown';
+    }
+
+    async function fetchStatuspageCompany(company) {
+      const [summaryRes, incidentsRes] = await Promise.all([
+        fetchWithTimeout(`${company.url}/api/v2/summary.json`),
+        fetchWithTimeout(`${company.url}/api/v2/incidents.json`),
+      ]);
+      const summary   = await summaryRes.json();
+      const incidents = await incidentsRes.json();
+      const allIncidents    = incidents.incidents || [];
+      const activeIncidents = allIncidents.filter(i => !i.resolved_at);
+      const uptimePercent   = computeUptimeFromIncidents(allIncidents);
+      const currentStatus   = normalizeStatuspageStatus(summary.status?.indicator);
+      return {
+        id:               company.id,
+        name:             company.name,
+        emoji:            company.emoji,
+        category:         company.category,
+        statusPageUrl:    company.url,
+        currentStatus,
+        uptimePercent:    parseFloat(uptimePercent.toFixed(4)),
+        uptimeWindowDays: 90,
+        activeIncidents:  activeIncidents.length,
+        recentIncidents:  allIncidents.slice(0, 5),
+        lastUpdated:      new Date().toISOString(),
+        error:            null,
+      };
+    }
+
+    function buildErrorEntry(company, errorMessage) {
+      return {
+        id:               company.id,
+        name:             company.name,
+        emoji:            company.emoji || '\u2753',
+        category:         company.category || 'unknown',
+        statusPageUrl:    company.url || null,
+        currentStatus:    'unknown',
+        uptimePercent:    null,
+        uptimeWindowDays: null,
+        activeIncidents:  null,
+        recentIncidents:  [],
+        lastUpdated:      new Date().toISOString(),
+        error:            errorMessage,
+      };
+    }
+
+    async function fetchAllCompanies() {
+      const tasks = STATUSPAGE_COMPANIES.map(company =>
+        fetchStatuspageCompany(company).catch(err => buildErrorEntry(company, err.message))
+      );
+      const results = await Promise.allSettled(tasks);
+      return results.map(r => r.status === 'fulfilled' ? r.value : r.reason);
+    }
+
+    const ZONES = {
+      sky:     { min: 99.9,  label: 'FAIR SKIES',      sub: '≥ 99.9% uptime' },
+      surface: { min: 99.5,  max: 99.9,  label: 'SURFACE WATERS', sub: '99.5–99.9%' },
+      shallow: { min: 99.0,  max: 99.5,  label: 'SHALLOW DEPTHS', sub: '99.0–99.5%' },
+      deep:    { min: 98.0,  max: 99.0,  label: 'DEEP WATERS',    sub: '98.0–99.0%' },
+      abyss:   { min: 90.0,  max: 98.0,  label: 'THE ABYSS',      sub: '90.0–98.0%' },
+      floor:   {             max: 90.0,  label: 'OCEAN FLOOR',    sub: '< 90.0%' },
+      unknown: {                         label: 'UNCHARTED WATERS', sub: 'no data' },
+    };
+
+    /* ─── Stars ──────────────────────────────────────────────────── */
+    function initStars() {
+      const container = document.getElementById('stars');
+      for (let i = 0; i < 140; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        const size = Math.random() * 2.5 + 0.5;
+        s.style.cssText = `
+          left: ${Math.random()*100}%;
+          top: ${Math.random()*100}%;
+          width: ${size}px;
+          height: ${size}px;
+          --dur: ${(Math.random()*4+2).toFixed(1)}s;
+          --delay: ${(Math.random()*5).toFixed(1)}s;
+          --max-op: ${(Math.random()*0.6+0.3).toFixed(2)};
+        `;
+        container.appendChild(s);
+      }
+    }
+
+    /* ─── Zone detection ─────────────────────────────────────────── */
+    function getZone(uptimePercent) {
+      if (uptimePercent === null || uptimePercent === undefined) return 'unknown';
+      if (uptimePercent >= 99.9) return 'sky';
+      if (uptimePercent >= 99.5) return 'surface';
+      if (uptimePercent >= 99.0) return 'shallow';
+      if (uptimePercent >= 98.0) return 'deep';
+      if (uptimePercent >= 90.0) return 'abyss';
+      return 'floor';
+    }
+
+    /* ─── Status helpers ─────────────────────────────────────────── */
+    function statusDotClass(status) {
+      const map = {
+        operational:    'dot-operational',
+        degraded:       'dot-degraded',
+        partial_outage: 'dot-partial',
+        major_outage:   'dot-major',
+      };
+      return map[status] || 'dot-unknown';
+    }
+
+    function statusLabel(status) {
+      const map = {
+        operational:    'Operational',
+        degraded:       'Degraded',
+        partial_outage: 'Partial Outage',
+        major_outage:   'Major Outage',
+        unknown:        'Unknown',
+      };
+      return map[status] || (status || 'Unknown');
+    }
+
+    function uptimeColorClass(pct) {
+      if (pct === null || pct === undefined) return 'uptime-none';
+      if (pct >= 99.9) return 'uptime-high';
+      if (pct >= 99.0) return 'uptime-mid';
+      return 'uptime-low';
+    }
+
+    function formatUptime(pct) {
+      if (pct === null || pct === undefined) return '—';
+      return pct.toFixed(3) + '%';
+    }
+
+    /* ─── Bubbles ────────────────────────────────────────────────── */
+    function makeBubbles(count = 3) {
+      const wrap = document.createElement('div');
+      wrap.className = 'bubbles';
+      for (let i = 0; i < count; i++) {
+        const b = document.createElement('div');
+        b.className = 'bubble';
+        b.style.cssText = `
+          --sz: ${(Math.random()*5+3).toFixed(0)}px;
+          --dur: ${(Math.random()*3+2).toFixed(1)}s;
+          --delay: ${(Math.random()*4).toFixed(1)}s;
+          --x: ${(Math.random()*80+10).toFixed(0)}%;
+        `;
+        wrap.appendChild(b);
+      }
+      return wrap;
+    }
+
+    /* ─── Company Card ───────────────────────────────────────────── */
+    function renderCard(company) {
+      const zone    = getZone(company.uptimePercent);
+      const tilt    = (Math.random() * 2.4 - 1.2).toFixed(2);
+      const hasInc  = company.activeIncidents > 0;
+
+      const a = document.createElement('a');
+      a.className  = `card card-${zone}${hasInc ? ' card-incident' : ''}`;
+      a.href       = company.statusPageUrl || '#';
+      a.target     = '_blank';
+      a.rel        = 'noopener noreferrer';
+      a.style.setProperty('--tilt', `${tilt}deg`);
+      a.title      = `${company.name} — click to visit status page`;
+
+      a.innerHTML = `
+        <span class="card-emoji">${company.emoji || '🌐'}</span>
+        <div class="card-name">${company.name}</div>
+        <div class="card-uptime ${uptimeColorClass(company.uptimePercent)}">${formatUptime(company.uptimePercent)}</div>
+        <div class="card-status">
+          <span class="status-dot ${statusDotClass(company.currentStatus)}"></span>
+          <span>${statusLabel(company.currentStatus)}</span>
+        </div>
+        <div class="card-incidents ${hasInc ? 'has-incidents' : ''}">
+          ${hasInc ? `⚠ ${company.activeIncidents} active incident${company.activeIncidents !== 1 ? 's' : ''}` : '✓ No active incidents'}
+        </div>
+      `;
+
+      // Add bubbles for underwater zones
+      if (['shallow','deep','abyss','surface','floor'].includes(zone)) {
+        const bubbleCount = zone === 'floor' ? 6 : zone === 'abyss' ? 5 : zone === 'deep' ? 4 : 2;
+        a.appendChild(makeBubbles(bubbleCount));
+      }
+
+      return a;
+    }
+
+    /* ─── Wave SVG path ──────────────────────────────────────────── */
+    function makeWaveDivider(fromColor, toColor) {
+      const div = document.createElement('div');
+      div.className = 'wave-divider';
+      div.style.background = `linear-gradient(180deg, ${fromColor} 0%, ${toColor} 100%)`;
+
+      const svgPath = 'M0,40 C80,10 160,70 240,40 C320,10 400,70 480,40 C560,10 640,70 720,40 C800,10 880,70 960,40 C1040,10 1120,70 1200,40 C1280,10 1360,70 1440,40 L1440,80 L0,80 Z';
+
+      div.innerHTML = `
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="${svgPath}" fill="rgba(255,255,255,0.08)"/>
+          <path d="M0,50 C80,20 160,75 240,50 C320,20 400,75 480,50 C560,20 640,75 720,50 C800,20 880,75 960,50 C1040,20 1120,75 1200,50 C1280,20 1360,75 1440,50 L1440,80 L0,80 Z" fill="rgba(255,255,255,0.05)"/>
+        </svg>
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="${svgPath}" fill="rgba(255,255,255,0.06)"/>
+        </svg>
+      `;
+      return div;
+    }
+
+    /* ─── Zone Section ───────────────────────────────────────────── */
+    function makeZoneSection(zoneKey, companies, includeWaveBefore) {
+      const frag = document.createDocumentFragment();
+
+      if (includeWaveBefore) {
+        const waveWrap = document.createElement('div');
+        waveWrap.style.cssText = 'position:relative; background: linear-gradient(180deg,#2d6a9f 0%,#1e6ba8 100%);';
+
+        const wavDiv = makeWaveDivider('#2d6a9f', '#1e6ba8');
+
+        const label = document.createElement('div');
+        label.className = 'wave-label';
+        label.textContent = '〰 99.9% — The Surface 〰';
+        wavDiv.appendChild(label);
+
+        waveWrap.appendChild(wavDiv);
+        frag.appendChild(waveWrap);
+      }
+
+      const section = document.createElement('div');
+      section.className = `zone-section zone-${zoneKey}`;
+
+      const zoneMeta = ZONES[zoneKey];
+
+      const labelRow = document.createElement('div');
+      labelRow.className = 'zone-label';
+      labelRow.innerHTML = `<div class="zone-line"></div><div class="zone-label-text">${zoneMeta.label} — ${zoneMeta.sub}</div><div class="zone-line"></div>`;
+      section.appendChild(labelRow);
+
+      // Ocean Floor gets a special wreckage header
+      if (zoneKey === 'floor') {
+        const floorHdr = document.createElement('div');
+        floorHdr.className = 'floor-header';
+        floorHdr.innerHTML = `
+          <div class="floor-header-title">⚓ The Ocean Floor</div>
+          <div class="floor-header-sub">Where the truly sunken rest</div>
+          <div class="floor-scatter">
+            <span style="--sway-dur:11s;--sway-delay:0s;--sway-base:-5deg;--sway-peak:4deg;">🚢</span>
+            <span style="--sway-dur:7s;--sway-delay:-3s;--sway-base:-2deg;--sway-peak:6deg;">⚓</span>
+            <span style="--sway-dur:13s;--sway-delay:-6s;--sway-base:-4deg;--sway-peak:2deg;">💀</span>
+            <span style="--sway-dur:9s;--sway-delay:-1s;--sway-base:-6deg;--sway-peak:3deg;">🦴</span>
+            <span style="--sway-dur:15s;--sway-delay:-8s;--sway-base:-1deg;--sway-peak:5deg;">⚓</span>
+            <span style="--sway-dur:8s;--sway-delay:-4s;--sway-base:-3deg;--sway-peak:4deg;">🦴</span>
+            <span style="--sway-dur:12s;--sway-delay:-2s;--sway-base:-2deg;--sway-peak:3deg;">💀</span>
+          </div>
+          <div class="sediment-line"></div>
+        `;
+        section.appendChild(floorHdr);
+
+        // Sediment particles drifting sideways
+        const sedWrap = document.createElement('div');
+        sedWrap.className = 'sediment-particles';
+        for (let i = 0; i < 22; i++) {
+          const p = document.createElement('div');
+          p.className = 'sediment-particle';
+          const size = (Math.random() * 2.5 + 1.5).toFixed(1);
+          p.style.cssText = `
+            --ps: ${size}px;
+            --py: ${(Math.random() * 90 + 5).toFixed(0)}%;
+            --pd: ${(Math.random() * 20 + 14).toFixed(1)}s;
+            --pdelay: -${(Math.random() * 25).toFixed(1)}s;
+            --pdrift: ${(Math.random() * 40 - 10).toFixed(0)}px;
+          `;
+          sedWrap.appendChild(p);
+        }
+        section.appendChild(sedWrap);
+      }
+
+      if (companies.length === 0) {
+        const empty = document.createElement('p');
+        empty.style.cssText = 'text-align:center; color:rgba(180,210,255,0.3); font-size:0.8rem; padding:1rem 0 1.5rem; font-style:italic;';
+        empty.textContent = 'No ships in these waters.';
+        section.appendChild(empty);
+      } else {
+        const grid = document.createElement('div');
+        grid.className = 'company-grid';
+        companies.forEach(c => grid.appendChild(renderCard(c)));
+        section.appendChild(grid);
+      }
+
+      // Add fish animation to abyss / deep / floor
+      if (zoneKey === 'deep' || zoneKey === 'abyss') {
+        const fishWrap = document.createElement('div');
+        fishWrap.className = 'fish-container';
+        fishWrap.innerHTML = '<div class="fish">🎣</div><div class="fish">🦑</div>';
+        section.appendChild(fishWrap);
+      }
+      if (zoneKey === 'floor') {
+        const fishWrap = document.createElement('div');
+        fishWrap.className = 'fish-container';
+        fishWrap.innerHTML = '<div class="fish" style="filter:grayscale(1) brightness(0.5) drop-shadow(0 0 4px rgba(80,50,20,0.4));">💀</div><div class="fish" style="filter:grayscale(1) brightness(0.45);">🦴</div>';
+        section.appendChild(fishWrap);
+      }
+
+      frag.appendChild(section);
+      return frag;
+    }
+
+    /* ─── Fog separator ──────────────────────────────────────────── */
+    function makeFogSep() {
+      const d = document.createElement('div');
+      d.className = 'fog-separator';
+      d.innerHTML = `
+        <div class="fog-wisp" style="--dur:12s; --x:5%;"></div>
+        <div class="fog-wisp" style="--dur:9s;  --x:40%;"></div>
+        <div class="fog-wisp" style="--dur:15s; --x:70%;"></div>
+        <div class="fog-text">⛵ · · · fog of uncertainty · · · ⛵</div>
+      `;
+      return d;
+    }
+
+    /* ─── Render full scene ──────────────────────────────────────── */
+    function renderScene(data) {
+      const scene = document.getElementById('scene');
+      scene.innerHTML = '';
+
+      const knownOrder = ['sky','surface','shallow','deep','abyss','floor'];
+
+      // Bucket companies
+      const buckets = { sky:[], surface:[], shallow:[], deep:[], abyss:[], floor:[], unknown:[] };
+      (data.companies || []).forEach(c => {
+        const z = getZone(c.uptimePercent);
+        buckets[z].push(c);
+      });
+
+      // Sort each bucket descending by uptime
+      knownOrder.forEach(z => {
+        buckets[z].sort((a,b) => (b.uptimePercent ?? -1) - (a.uptimePercent ?? -1));
+      });
+
+      // Render sky zone (no wave before)
+      scene.appendChild(makeZoneSection('sky', buckets.sky, false));
+
+      // Render underwater zones with wave before first
+      let firstUnder = true;
+      ['surface','shallow','deep','abyss','floor'].forEach(z => {
+        scene.appendChild(makeZoneSection(z, buckets[z], firstUnder));
+        firstUnder = false;
+      });
+
+      // Unknown zone with fog separator
+      if (buckets.unknown.length > 0) {
+        scene.appendChild(makeFogSep());
+        scene.appendChild(makeZoneSection('unknown', buckets.unknown, false));
+      }
+
+      scene.style.display = 'block';
+    }
+
+    /* ─── Stats bar update ───────────────────────────────────────── */
+    function updateStats(companies) {
+      const known     = companies.filter(c => c.uptimePercent !== null && c.uptimePercent !== undefined);
+      const incidents = companies.filter(c => c.activeIncidents > 0);
+      const operational = companies.filter(c => c.currentStatus === 'operational');
+
+      const bar = document.getElementById('stats-bar');
+      bar.innerHTML = `
+        <div class="stat-item">🚢 Companies tracked: <strong>${companies.length}</strong></div>
+        <div class="stat-item">✅ Operational: <strong>${operational.length}</strong></div>
+        <div class="stat-item">⚠️ Active incidents: <strong style="color:${incidents.length ? 'var(--coral)' : 'inherit'}">${incidents.length}</strong></div>
+        <div class="stat-item">📊 Avg uptime: <strong>${known.length ? (known.reduce((s,c) => s + c.uptimePercent, 0) / known.length).toFixed(3) + '%' : '—'}</strong></div>
+      `;
+
+      // Update tab title
+      if (incidents.length > 0) {
+        document.title = `⚠️ ${incidents.length} incident${incidents.length !== 1 ? 's' : ''} | ⚓ Uptime Seas`;
+      } else {
+        document.title = '⚓ The Uptime Seas';
+      }
+
+      // Update header meta
+      document.getElementById('company-count').textContent = `${companies.length} vessels tracked`;
+    }
+
+    /* ─── Show error ─────────────────────────────────────────────── */
+    function showError(msg) {
+      const container = document.getElementById('state-container');
+      container.style.display = 'flex';
+      container.innerHTML = `
+        <div style="font-size:3.5rem; filter:drop-shadow(0 0 16px rgba(255,107,91,0.5));">🌊</div>
+        <p class="state-text" style="color:rgba(255,170,160,0.9);">${msg}</p>
+        <button class="retry-btn" onclick="fetchStatus()">⟳ Try again</button>
+      `;
+      document.getElementById('scene').style.display = 'none';
+    }
+
+    /* ─── Fetch data ─────────────────────────────────────────────── */
+    async function fetchStatus() {
+      const stateEl = document.getElementById('state-container');
+      if (!document.getElementById('scene').children.length) {
+        stateEl.style.display = 'flex';
+        stateEl.innerHTML = `<div class="anchor-spinner">⚓</div><p class="state-text">Charting the waters…</p>`;
+      }
+
+      try {
+        const companies = await fetchAllCompanies();
+
+        stateEl.style.display = 'none';
+
+        renderScene({ companies });
+        updateStats(companies);
+
+        const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        document.getElementById('last-updated').textContent = `Last updated: ${ts}`;
+      } catch (err) {
+        console.error('Failed to fetch status:', err);
+        showError('The seas are choppy — could not reach the lighthouse.');
+      }
+    }
+
+    /* ─── Boot ───────────────────────────────────────────────────── */
+    initStars();
+    fetchStatus();
+    setInterval(fetchStatus, REFRESH_INTERVAL);
+  </script>
+</body>
+</html>
